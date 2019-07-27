@@ -1,0 +1,303 @@
+1.ubuntu的任务栏，可以将常用的图标拖拽到常用任务栏里面。
+2.放大终端的字体:ctrl+shift + +
+   放小终端窗口字体:ctrl+ -
+
+3.终端常用命令:
+     命令                         对应英文                           作用
+     ls     (-l -h 配合使用可以显示更人性化)                         list                                   查看当前文件夹的内容
+    pwd                          print work directory        当前所在文件夹
+    cd【目录名】            change directory              进入指定文件夹
+   touch[文件名]            touch             	             如果文件不存在，则新建文件夹,若存在则修改文件末次修改日期
+    mkdir  		     make directory                创建目录
+    rm【文件名】           remove 	             删除指定文件夹名,其中-f是强制删除，即使文件不存在也不报错。-r是递归寻找子文件并删除的意思。
+
+4.终端命令的格式
+    command [-options] [parameter] 
+    * command :命令
+    * options:选项
+    * parameter:传给命令的参数 [0,+...]
+    eg：rm -rf [文件夹/文件名]
+
+5.1 command --help
+    提示command的命令帮助信息
+
+5.2 man command 
+      查询终端命令帮助信息的详细用法
+      b  回滚一页
+      空格 翻页
+      回车 向下走一行
+      q   返回终端
+
+6 拷贝和移动文件
+      cp 源文件路径 目标文件路径              复制文件到指定的目标文件（其中加上-i会在覆盖文件的时候提示）
+      mv 
+
+7. 查看文件内容
+
+8. ctrl + c 结束当前指令执行过程
+
+9。 linux的隐藏文件名前面都有一个.
+
+10. linux 中 cd . 表示当前目录 ， cd .. 表示当前目录的上级目录
+
+11. ls通配符的使用
+      *   任意多字符                     eg: ls a*   代表以a开头的文件名
+      ?   任意一个字符 ，至少一个      
+      []  可以匹配字符组的任意一个字符   eg:[abc] 匹配a、b、c中的任意一个
+      [a-f]  匹配a到f之间的任意一个字符
+      
+12. cd ~ 切换到当前用户的家目录(/home/用户目录)
+
+13. mkdir -p 【目录/子目录1/子目录2】 创建多层目录
+
+14 shutdown 命令
+     shutdown -h 10      //计算机将在10分钟后关机，且会显示在登录用户的当前屏幕中
+     shutdown -h now   //立刻关机
+     shutdown  -r now   //立刻重启
+     shutdown  -r 10      //10分钟后重启
+     reboot                    //重启，等同于shutdown -r now
+     halt                          //关闭系统，等同于shutdown - h now
+     sudo shutdown -h now        //当关机权限不足时，可以申请高级权限。
+     *** 不管时重启还是关闭系统，首先要运行sync命令，将当前内存的数据写入磁盘中，防止数据丢失。
+  
+15 cat [文件路径]         查看指定文件名内的文件内容 从头部开始。
+     tac [文件路径]         查看指定文件内容，从尾部开始。
+     echo '11121' > 文件路径           代表将‘11121’ 重定向输入到文件路径的指定文件中，若文件有内容则删除再追加新内容
+     echo '2222'   >> 文件路径         代表将  ‘2222’ 重定向输入到文件路径的指定文件中，不过这次时追加进原先内容的尾部!
+     head [行数] 文件路径         默认只显示前10行数据
+     tail    [行数]  文件路径          默认只显示后10行数据
+     tail -f  文件名          动态的显示文件的最后10行， 若文件内容不断增加，利用它可以更直观。
+
+16 命令chgrp 
+     可以更改文件的所属组 ，其格式: chgrp [组名] [文件名]
+     eg:       # groupadd testgroup                             //增加一个testgroup的组
+                 # mkdir /tmp/4_6                                    //创建实验用的目录
+                 # cd  /tmp/4_6
+                 # touch test1                                            //默认所属组为当前用户所属组。
+                  # chgrp testgroup test1                          //将组改为 testgroup组
+                 结果： -rw-r--r-- 1 haizhang testGroup 0 Jun 18 01:35 haizhang.txt    （其中所属组时testGroup，创建者haizhang）
+      如果chgrp 想改变一个目录下所有的所属组，则要加上-R 
+                 eg: chgrp -R testgroup dirname
+ 
+17 chown  更改文件的所有者
+      格式: chown [-R] 账户名 文件名   
+               chown [-R] 账户名:组名 文件名       修改指定的文件名的所有者时指定的账户名，所属组时指定的组名
+              (-R 只能用再目录，作用时做级联修改，不仅仅时更改当前目录,连里面的目录和文件一起全部更改)
+      eg: chown -R haizhang:testGroup dirname       (修改dirname及其目录下的所有文件所属组为testGroup 所属者为haizhang)
+ 
+18 chmod 改变文件权限 rwx
+      r = 4  , w =2  , x=1, - =0
+      如果你创建了一个目录又不想让别人看到该目录的内容，则需要设置成 rwxr-----（740） 
+      即: chmod 740 dirname;
+
+19 unmask 改变文件系统的默认权限
+     eg: unmask 0022     则相当于使用者权限u-w   其他人权限 o - w
+     0022 最前面的0代表这是八进制数，加不加无所谓。
+
+20 chattr 修改文件的特殊属性
+     A: 表示文件或目录atime不可变
+     s:将数据同步写入磁盘中
+     a:表示只能追加不可删除，非root用户不可设定
+     c:自动压缩文件，读取时会自动解压
+     i:表示文件不可删除、重命名、设定连接、写入以及新增数据。
+
+    eg: chattr +i  dirname
+         
+21 lsattr 该命令用于读取文件或者目录的特殊权限(list attribute)
+    格式: lsattr [-aR] [文件名/目录名]
+    -a选项：连同隐藏的文件一同列出
+    -R选项:  连同子目录的数据一同列出
+    eg：lsattr dirname 
+           结果: ----i------ 
+
+22 set uid 、set gid 、sticky bit
+      set uid：针对二进制可执行文件 ，使文件再执行阶段具有文件所有者的权限。比如passwd命令，普通用户修改密码可以临时获取root权限。
+      set gid:  该权限可以作用在文件/目录上，当作用于文件，其用途和set uid一致，他会使得文件再执行阶段获得文件所属组的权限。目录被设置
+                   该权限时，任何用户再此目录下创建的文件都具有和该目录所属的组相同的组。
+      stick bit: 理解为防删除位，文件是否可以被某用户删除，主要取决于该文件所在的目录是否对该用户具有写权限。若没有写权限，该用户即
+	   不能写 也不能删除同时也不可以添加文件。如果要求用户可以添加文件但不可以删除该目录下其他用户的文件。则可以给父级目录加此权限。
+       eg:  chmod u+s filename    给用户添加set uid 权限
+              chmod g+s dirname    给指定文件的所属组添加set gid权限
+              sticky bit 权限的命令为chmod o+t dirname 
+
+23 which命令查找执行文件的绝对路径
+     eg : which vi                   查找vi命令文件所在的绝对路径
+
+24 find 搜索文件
+     格式：find [路径] [参数]
+     -atime +n/-n    表示访问或者执行时间大于或小于n天的文件
+     -ctime  +n/-n 
+      
+25 grep 查找匹配指定的内容是否存在于文本之中
+     格式： grep  [option] [查找的单词] [指定的文本] 
+     option包括： -n         显示匹配的行号
+                           -i          忽略大小写匹配
+	           -v         不包括指定的匹配内容
+     查找的单词可以利用正则表达式：如  ^[ab]  以ab开头的单词的行要匹配 ,同样行尾是[ab]$
+                                                        grep -n   ^[ab]  b.txt
+
+26 echo重定向内容到一个文件中
+     '>'  代表将echo的内容输入覆盖到文件中
+    ' >>' 代表将echo的内容追加到文件末行
+     echo 'hello python' >> b.txt
+     同样的道理 ls -lh  > b.txt   则代表将ls -lh 的结果内容覆盖到文件中
+                       ls -lh  >> b.txt 代表将ls -lh 结果追加到文件之中
+     利用echo 'word'  > b   如果b文件不存在，则自动创建 并把word 覆盖到b文件中
+
+27 管道 ( | )
+     1. linux 允许将一个命令的输出可以通过管道变为另一个命令的输入
+      常用配合命令: more  分屏显示内容
+                            grep   在执行结果的基础上查询指定的文本
+      eg: ls -lh | more                     ：代表将ls -lh 得到的结果 通过管道 |  传递到more 命令， 并让more命令对其分屏显示内容。
+      eg: ls -lh /etc | grep -in ^[d]  |  more 
+
+28 vi命令的使用
+     :w     保存文件但不退出vi
+     :w file   将修改另外存到file中，不退出vi
+     :w!    强制保存，不退出vi
+     :wq   保存并退出vi
+     :wq!  强制保存文件并推出vi
+     :q      不保存退出
+     :e!      放弃所有修改
+     :q!      不保存文件强制退出
+
+
+29 查看或配置网卡信息
+     命令                作用
+     ifconfig           查看/配置计算机当前的网卡配置信息
+     pint ip 地址     检测目标ip地址连接是否正常
+    
+     检测本地网卡是否正常: ping 127.0.0.1 
+     检测到目标主机是否正常: ping  IP地址
+     linux的物理网卡一般用ensXX表示
+
+30 ssh服务
+     默认的端口号是22
+     格式:ssh [-p port] user@remote
+     user 是在远程机器上的用户名，如果不能指定的话默认为当前用户
+     remote 是远程机器的地址，可以是IP/域名，或者别名
+     port   是SSH监听的端口，默认是22
+     exit可以退出当前用户。
+
+31 scp命令（secure copy）用来远程拷贝文件。 (mac中使用！)
+     在linux下进行远程拷贝文件的命令
+     *  把本低当前目录下的01.py 文件复制到远程家目录下的Desktop/01.py（相对于当前的路径）
+            格式：scp -P port  源文件(01.py)  复制的目标文件(user@remote:Desktop/01.py)
+      * 把远程家目录下的Desktop/o1.py 文件复制到本地当前目录下的01.py
+             格式: scp -P port  user@remote:Desktop/01.py    01.py
+      *  复制目录
+            
+             格式: scp -P port -r demo user@remote:Desktop   
+     
+32.ssh 高级 
+     免密码登录
+     配置别名     提示：有关SSH配置信息都保存在用户家目录下的.ssh目录下
+      ssh-keygen 生成SSH密钥
+      ssh-copy-id -p port user@remote  可以让我们远程服务器记住我们的公钥 (remote是远程服务器促成南方的地址)
+      
+      
+33 硬链接数，就是又多少中方式进入到指定的目录 
+
+34 sudo 表示命令执行借用root身份进行执行
+
+35 组管理 （创建组和删除组都要用sudo进行创建）
+     添加组： groupadd  组名                        添加组
+     删除组： groupdel    组名
+     查询组:    cat /etc/group 
+
+36 用户管理 
+     创建用户: useradd [option] [组名] 【用户名】  
+                    option 包括 ： -m  自动建立用户家目录  (必要)
+                                            -g	  指定用户所在的组，否则会建立一个和用户同名的组
+
+       设置密码：passwd 用户名
+       查看已有用户信息: cat /etc/passwd
+       删除用户 userdel -r  [用户名]
+
+37 查询用户的id
+     id [用户名]
+             结果：uid=1002(zhangsan) gid=1001(dev) 
+  
+38 usermod 修改主组/附加组
+     修改指定用户名的主组   sudo usermod -g [附加组] [用户名]   
+     修改指定用户名的附加组   sudo usermod -G [附加组] [用户名]   
+     eg： 创建用户的时候，一般新用户没有sudo使用权限，需要为用户添加一个附加组(除了主组外的其他组)
+              sudo usermod -G sudo zhangsan           将张三加入到sudo组
+ 
+     修改用户登录的时候所用的shell ： sudo usermod -s [shell名称] [用户名]   
+     eg:  创建的新用户一般用的shell 是dash ，而dash有一个缺点，就是按↑箭头会出现乱码
+            而一般推荐使用 / bin/bash 
+            sudo usermod -s /bin/bash zhangsan
+
+39 su -[用户名]   可以切换用户并且切换其家目录（必须加上-号）
+
+40 查看服务器上当前的系统时间
+     date  查看当前的系统时间
+     cal [-y]    查看当前的日历     
+
+41 查看磁盘信息名
+      df -h       (df就是disk free 显示磁盘剩余时间)
+      du -h [目录名]         (disk usage 显示目录下的文件大小)
+
+42 进程信息
+     当前正在执行的程序才是进程。
+     格式: ps aux  (不需要减号！)              （process status 查看进程的详细状况,其中a是所有的进程，包括其他用户
+                                                                  s代表显示进程的详细状态，x显示没有控制终端的进程）
+     top命令可以动态的监控哪些程序的cpu占有率高，退出按q
+
+43 kill -9 [进程id] 
+     强制干掉指定的进程
+
+44 find 查找文件
+      find [路径]  -name [文件名]  (用双引号括起来文件名)        
+      eg     find /   -name "*.py"    (搜索所有后缀为py的文件)
+      如果不指定路径，则默认为当前路径
+
+45 软连接 （相当于windows的快捷方式）
+     ln -s 【被连接的文件】【连接文件名】                              （没有-s 是硬链接）
+     在创建软连接的同时要使用绝对路径，不要用相对路径
+
+46 在linux 中 文件名和文件数据是分开保存的，保存在磁盘中不同的位置
+
+47 打包
+     * tar命令(不负责压缩)
+           打包： tar -cvf  打包文件.tar   被打包文件/路径...      (如果又多个文件要用空格隔开)
+           tar -cvf py.tar 01.py 02.py 03.py
+           解包： tar -xvf   打包了的文件.tar
+
+48 压缩/解压缩
+      * gzip命令(生成的文件格式 xxx.tar.gz)
+         用gzip压缩tar打包后的文件
+       使用时只用在tar 的选项加一个-z就可以打包压缩了 （生成.tar.gz）
+       eg: tar -zcvf     打包文件.tar.gz    文件1 文件2 .。。
+       解压缩文件 
+       eg: tar -zxvf     打包文件.tar.gz 
+       解压到指定路径 
+      eg: tar -zxvf     打包文件.tar.gz  -C 目标路径
+
+     * bzip2
+        tar -jcvf  打包文件.tar.bz2   被打包文件/路径...      (如果又多个文件要用空格隔开)
+        tar -jxvf   打包文件.tar.bz2
+
+49 软件安装
+     * 通过apt安装/卸载软件(apt 会去unbuntu的主服务器去找是否有指定的包)
+        apt是Advanced Packaging Tool   是linux下的一款软件包管理工具
+     安装软件
+         sudo apt install 软件包
+      更新已安装的包
+         sudo apt upgrade
+      卸载软件
+          sudo apt remove 软件包
+
+ 50 配置软件源 
+      由于ubuntu的主服务器在国外，所以速度慢，要配置国内的镜像源。
+      
+
+51 查看已经连接的服务器端口
+      netstat -a
+      查看所有的服务端口
+      netstat -ap
+      查看指定端口
+      netstat -ap | grep 8080
+      
+         
