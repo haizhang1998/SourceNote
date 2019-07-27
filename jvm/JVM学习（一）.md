@@ -1,5 +1,7 @@
 # JVM学习（一）
 
+**这一篇介绍volatile关键字以及jvm的位置**
+
 1. jvm的体系结构
 
    ![1564132023130](C:\Users\86137\AppData\Roaming\Typora\typora-user-images\1564132023130.png)
@@ -50,6 +52,17 @@ public class VolitaileTest {
 
 上面代码定义了一个initFlag并赋予初始值false ，定义一个线程A 去检测initFlag ，当initFlag为true时会打印数据准备完成！否则一直等待。
 
-而线程B 就去调用prepareData方法尝试改变initFlag状态。正常来讲
+而线程B 就去调用prepareData方法尝试改变initFlag状态。正常来讲initFlag如果为true就会再线程A处跳出while循环然后打印数据准备完成！
 
 ![1564135085881](C:\Users\86137\AppData\Roaming\Typora\typora-user-images\1564135085881.png)
+
+上面时运行的结果，你会发现无论怎么运行，线程A不可能打印得出数据准备完成!这几个字，究竟为什么呢？我们想以下，竟然每个不同的线程都拥有类中共享变量的独立的一个副本，那么线程B在修改initFlag状态时，线程A能监视到？ 在不做任何干涉的情况下，线程A拥有的initFlag的值，并不会监视到线程B对它做的修改，因为他们两个在线程的工作区中属于不同的副本，但是又来源同一个共享变量。怎么让他们都能监听到彼此修改的值呢？？
+
+**volatile** 关键字就起到了这个作用，它让标记的元素对其他线程可见，也就时保证了可见性。简单的讲它能使得被标注的共享变量在拷贝不同的副本到线程的工作区时，线程对副本的修改可以让另一个线程的副本监视到值的改变（就相当于另一个同一共享变量的副本的值也会发生改变）。
+
+现在在initFlag前加入volatile关键字，再看效果
+
+![1564217237053](C:\Users\86137\AppData\Roaming\Typora\typora-user-images\1564217237053.png)
+
+任务完成！
+
