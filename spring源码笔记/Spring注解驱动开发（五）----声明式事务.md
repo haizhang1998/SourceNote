@@ -193,7 +193,7 @@ public @interface EnableTransactionManagement {
 	AdviceMode mode() default AdviceMode.PROXY;
 
 	/**
-	 指定事务增强器的执行顺序，当有很多增强器作用于指定的接口时
+	  当有很多增强器作用于指定的接口时，指定事务增强器的执行顺序
 	 */
 	int order() default Ordered.LOWEST_PRECEDENCE;
 
@@ -364,10 +364,11 @@ public class TransactionManagementConfigurationSelector extends AdviceModeImport
    	@Bean(name = TransactionManagementConfigUtils.TRANSACTION_ADVISOR_BEAN_NAME)
    	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
        
+       //给spring容器中注入一个增强器
    	public BeanFactoryTransactionAttributeSourceAdvisor transactionAdvisor() {
            
    		BeanFactoryTransactionAttributeSourceAdvisor advisor = new BeanFactoryTransactionAttributeSourceAdvisor();
-           //需要传入事务的注信息
+           //需要传入事务的注解信息（这里会解析@Transactional的属性）
    		advisor.setTransactionAttributeSource(transactionAttributeSource());
            //需要传入拦截器
    		advisor.setAdvice(transactionInterceptor());
@@ -393,10 +394,10 @@ public class TransactionManagementConfigurationSelector extends AdviceModeImport
    	}
    
    }
-   ```
-
-   看到transactionAttributeSource() 内部又新建了AnnotationTransactionAttributeSource();点进这个构造器
-
+```
+   
+看到transactionAttributeSource() 内部又新建了AnnotationTransactionAttributeSource();点进这个构造器
+   
    ```java
    public AnnotationTransactionAttributeSource(boolean publicMethodsOnly) {
    		this.publicMethodsOnly = publicMethodsOnly;
@@ -412,10 +413,10 @@ public class TransactionManagementConfigurationSelector extends AdviceModeImport
    		}
    	}
    
-   ```
-
-   继续点进spring的事务注解解析器中
-
+```
+   
+继续点进spring的事务注解解析器中
+   
    ```java
    //这一个方法就是用于解析事务的注解的，具体的逻辑在 parseTransactionAnnotation中
    @Override
@@ -465,10 +466,143 @@ public class TransactionManagementConfigurationSelector extends AdviceModeImport
    		return rbta;
    	}
    
-   ```
-
-   1. 给容器中注册事务增强器；
+```
+   
+   1. 给容器中注册事务增强器：
       1. 事务增强器要用事务注解的信息，AnnotationTransactionAttributeSource来解析事务的注解。
-      2. 事务拦截器，TransactionInterceptor，保存了事务属性信息，事务管理器。
-
+   2. 事务拦截器，TransactionInterceptor，保存了事务属性信息，事务管理器。它是一个MethodInterceptor方法拦截器，什么是方法拦截器呢？ 代理对象要执行目标方法时拦截器就会进行工作，怎么工作呢？TransactionInterceptor有一个invoke方法，而invoke方法调用了 invokeWithinTransaction方法。
+      
+      ```java
+      	protected Object invokeWithinTransaction(Method method, Class<?> targetClass, final InvocationCallback invocation)
+      			throws Throwable {
+      
+      		// 先获取@Transactional中事务的属性
+      		final TransactionAttribute txAttr = getTransactionAttributeSource().getTransactionAttribute(method, targetClass);
+              //在根据这些事务属性获取transactionManager
+      		final PlatformTransactionManager tm = determineTransactionManager(txAttr);
+      		final String joinpointIdentification = methodIdentification(method, targetClass, txAttr);
+      
+      		if (txAttr == null || !(tm instanceof CallbackPreferringPlatformTransactionManager)) {
+      			// Standard transaction demarcation with getTransaction and commit/rollback calls.
+      			TransactionInfo txInfo = createTransactionIfNecessary(tm, txAttr, joinpointIdentification);
+      			Object retVal = null;
+      			try {
+      				// This is an around advice: Invoke the next interceptor in the chain.
+      				// This will normally result in a target object being invoked.
+      				     //这里相当于方法的执行这里就和aop中链时调用的方法逻辑是一样的，会对其进行事务的拦截，如果执行方法正常，还会有返回值
+                      retVal = invocation.proceedWithInvocation();
+      			}
+      			catch (Throwable ex) {
+      				// target invocation exception
+                      //这里时目标方法执行后抛出异常的解决方案	，内部会执行txInfo.getTransactionManager().rollback(txInfo.getTransactionStatus());都是事务管理起去做的回滚操作
+      				completeTransactionAfterThrowing(txInfo, ex);
+      				throw ex;
+      			}
+      			finally {
+      				cleanupTransactionInfo(txInfo);
+      			}
+                  //如果一切顺利，就会提交更新数据库	txInfo.getTransactionManager().commit(txInfo.getTransactionStatus());同样事务管理器会执行commit方法提交事务
+      			commitTransactionAfterReturning(txInfo);
+                  //返回目标方法的执行结果
+      			return retVal;
+      		}
+      
+      		else {
+      			// It's a CallbackPreferringPlatformTransactionManager: pass a TransactionCallback in.
+      			try {
+      				Object result = ((CallbackPreferringPlatformTransactionManager) tm).execute(txAttr,
+      						new TransactionCallback<Object>() {
+      							@Override
+      							public Object doInTransaction(TransactionStatus status) {
+      								TransactionInfo txInfo = prepareTransactionInfo(tm, txAttr, joinpointIdentification, status);
+      								try {
+                                     
+      									return invocation.proceedWithInvocation();
+      								}
+                                    
+      								catch (Throwable ex) {
+      									if (txAttr.rollbackOn(ex)) {
+      										// A RuntimeException: will lead to a rollback.
+      										if (ex instanceof RuntimeException) {
+      											throw (RuntimeException) ex;
+      										}
+      										else {
+      											throw new ThrowableHolderException(ex);
+      										}
+      									}
+      									else {
+      										// A normal return value: will lead to a commit.
+      										return new ThrowableHolder(ex);
+      									}
+      								}
+      								finally {
+      									cleanupTransactionInfo(txInfo);
+      								}
+      							}
+      						});
+      
+      				// Check result: It might indicate a Throwable to rethrow.
+      				if (result instanceof ThrowableHolder) {
+      					throw ((ThrowableHolder) result).getThrowable();
+      				}
+      				else {
+      					return result;
+      				}
+      			}
+      			catch (ThrowableHolderException ex) {
+      				throw ex.getCause();
+      			}
+      		}
+      	}
+      ```
+      
+      上面的方法中spring会先获取目标方法中@Transactional中事务的属性，再根据这些事务属性获取transactionManager，怎么获取transactionManager呢？
+      
+      ```java
+      //根据给出的事务属性去获取事务管理器	
+      protected PlatformTransactionManager determineTransactionManager(TransactionAttribute txAttr) {
+      		// Do not attempt to lookup tx manager if no tx attributes are set
+                //如果事务属性没有设置的话，不会尝试获取事务管理器
+      		if (txAttr == null || this.beanFactory == null) {
+                  //直接返回已有的事务管理起
+      			return getTransactionManager();
+      		}
+              //如果有@Transactional(transactionManger=***)指定事务管理器的话
+      		String qualifier = txAttr.getQualifier();
+              //就检测这个注解是否有值
+      		if (StringUtils.hasText(qualifier)) {
+                  //获取指定名字的事务管理器
+      			return determineQualifiedTransactionManager(qualifier);
+      		}
+              //这里也是获取指定的事务管理起
+      		else if (StringUtils.hasText(this.transactionManagerBeanName)) {
+      			return determineQualifiedTransactionManager(this.transactionManagerBeanName);
+      		}
+          //如果没有指定的事务管理器的话
+      		else {
+                  //获取spring自动装配好的事务管理器
+      			PlatformTransactionManager defaultTransactionManager = getTransactionManager();
+                  //如果这个默认的事务管理器没有值
+      			if (defaultTransactionManager == null) {
+                      //就去缓存中找
+      				defaultTransactionManager = this.transactionManagerCache.get(DEFAULT_TRANSACTION_MANAGER_KEY);
+                      //如果缓存中也没有
+      				if (defaultTransactionManager == null) {
+                          //就去springIOC容器中创建PlatformTransactionManager这个类型的事务管理器，并返回这个事务管理器
+      					defaultTransactionManager = this.beanFactory.getBean(PlatformTransactionManager.class);
+                          //将这个事务管理器加载到缓存中
+      					this.transactionManagerCache.putIfAbsent(
+      							DEFAULT_TRANSACTION_MANAGER_KEY, defaultTransactionManager);
+      				}
+      			}
+                  //返回默认的事务管理器
+      			return defaultTransactionManager;
+      		}
+      	}
+      ```
+      
+      如过之前没有指定任何transactionManger就会去spring容器找PlatformTransactionManager类型的事务管理器。
+   
+   3. 有了事务管理器后就执行目标方法，并且进行事务控制invocation.proceedWithInvocation()，如果抛异常就直接用事务管理器进行回滚事务，否则就提交并返回处理结果。
+   
    
