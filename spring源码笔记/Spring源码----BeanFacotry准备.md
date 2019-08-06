@@ -1,4 +1,4 @@
-# Spring源码----BeanFacotry准备
+# Spring源码（一）----BeanFacotry准备
 
 spring--->refresh() : 容器创建以及刷新 
 
@@ -86,8 +86,8 @@ spring--->refresh() : 容器创建以及刷新
            //调用准备刷新方法
    		super.prepareRefresh();
    	}
-   ```
-   
+  ```
+  
    继续看向prepareRefresh();
 
    ```java
@@ -108,7 +108,7 @@ spring--->refresh() : 容器创建以及刷新
    		this.earlyApplicationEvents = new LinkedHashSet<ApplicationEvent>();
    	}
    ```
-   
+  
 2. obtainFreshBeanFactory();创建bean工厂
 
    ```java
